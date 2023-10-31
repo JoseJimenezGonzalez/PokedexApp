@@ -1,23 +1,16 @@
 package com.example.pokedexapp
 
 import android.content.Intent
-import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
-import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import com.example.pokedexapp.databinding.ActivityMainBinding
-import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +26,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var service: APIServiceList
 
+    private lateinit var listaPokemons: MutableList<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -40,11 +35,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
+        listaPokemons = mutableListOf()
+
         // Configurar el RecyclerView
-        /*val recyclerView = binding.recyclerView
+        val recyclerView = binding.recyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = AdapterRecyclerView()
-        recyclerView.adapter = adapter*/
+        adapter = AdapterRecyclerView(listaPokemons)
+        recyclerView.adapter = adapter
 
 
 
@@ -53,7 +50,6 @@ class MainActivity : AppCompatActivity() {
         val retrofit = Retrofit.Builder()
             .baseUrl("https://pokeapi.co/api/v2/")
             .addConverterFactory(GsonConverterFactory.create())
-            .client(OkHttpClient())
             .build()
 
         service = retrofit.create(APIServiceList::class.java)
@@ -193,9 +189,13 @@ class MainActivity : AppCompatActivity() {
             override fun onResponse(call: Call<PokemonList>, response: Response<PokemonList>) {
                 if (response.isSuccessful) {
                     val pokemonList = response.body()?.result
-                    if (pokemonList != null) {
-                        //adapter.setData(pokemonList)Falta el puto setData
+
+                    pokemonList?.forEach { pokemon ->
+                        // Agregar cada Pokémon a la lista de elementos
+                        listaPokemons.add(pokemon.name.capitalize())
                     }
+                    // Notificar al adaptador que se han agregado nuevos elementos
+                    adapter.notifyDataSetChanged()
                 } else {
                     // Maneja errores de respuesta
                 }
@@ -206,4 +206,5 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+
 }

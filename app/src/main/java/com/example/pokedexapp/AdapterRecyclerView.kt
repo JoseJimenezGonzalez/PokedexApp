@@ -1,5 +1,6 @@
 package com.example.pokedexapp
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +19,7 @@ class AdapterRecyclerView(private val dataSet: MutableList<String>) : RecyclerVi
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(viewGroup.context)
             .inflate(R.layout.text_row_item, viewGroup, false)
-
+        Log.d("MyAdapter", "onCreateViewHolder: View created")
         return ViewHolder(view)
     }
 
@@ -28,5 +29,6 @@ class AdapterRecyclerView(private val dataSet: MutableList<String>) : RecyclerVi
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         viewHolder.textView.text = dataSet[position]
+        Log.d("MyAdapter", "onBindViewHolder: Data bound for position $position")
     }
 }
