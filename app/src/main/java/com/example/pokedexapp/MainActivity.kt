@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
-        // Configura el RecyclerView
+        // Configurar el RecyclerView
         /*val recyclerView = binding.recyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = AdapterRecyclerView()
