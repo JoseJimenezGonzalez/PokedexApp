@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="colorPrimary">#E57373</color> <!-- Rojo -->
+    <color name="colorPrimaryDark">#000000</color> <!-- Negro -->
+    <color name="colorAccent">#FFFF00</color> <!-- Amarillo -->
+    <color name="colorBackground">#FFFFFF</color> <!-- Blanco -->
+    <color name="colorSecondary">#C0C0F3</color> <!-- Azul -->
+    <color name="colorAccent2">#00FF00</color> <!-- Verde -->
+
+
+    <color name="colorNormal">#A8A878</color>
+    <color name="colorBicho">#A8B820</color>
+    <color name="colorPsiquico">#F85888</color>
+    <color name="colorTierra">#E0C068</color>
+    <color name="colorVeneno">#A040A0</color>
+    <color name="colorElectrico">#F8D030</color>
+    <color name="colorPlanta">#78C850</color>
+    <color name="colorHielo">#98D8D8</color>
+    <color name="colorLucha">#C03028</color>
+    <color name="colorVolador">#A890F0</color>
+    <color name="colorFantasma">#705898</color>
+    <color name="colorAgua">#6890F0</color>
+    <color name="colorFuego">#F08030</color>
+    <color name="colorSiniestro">#705848</color>
+    <color name="colorAcero">#B8B8D0</color>
+
+</resources>
