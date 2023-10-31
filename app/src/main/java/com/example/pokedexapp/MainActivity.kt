@@ -13,11 +13,15 @@ import androidx.appcompat.widget.SearchView
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import com.example.pokedexapp.databinding.ActivityMainBinding
 import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -25,9 +29,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private val itemsList = mutableListOf<String>()
-
     private lateinit var adapter: AdapterRecyclerView
+
+    private lateinit var service: APIServiceList
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,11 +41,26 @@ class MainActivity : AppCompatActivity() {
 
 
         // Configura el RecyclerView
-        val recyclerView = binding.recyclerView
+        /*val recyclerView = binding.recyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = AdapterRecyclerView(itemsList)
-        recyclerView.adapter = adapter
+        adapter = AdapterRecyclerView()
+        recyclerView.adapter = adapter*/
 
+
+
+
+        //Crema
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://pokeapi.co/api/v2/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(OkHttpClient())
+            .build()
+
+        service = retrofit.create(APIServiceList::class.java)
+
+        // Realiza la solicitud de datos
+        loadPokemonData(1, 1292)//Hay 1292 pokemon
+        //Termina Crema
 
         binding.svNombrePokemon.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -81,21 +100,16 @@ class MainActivity : AppCompatActivity() {
                     //Altura
                     val altura = datos?.height?.let { alturaAMetros(it) }
                     //Tipos
-                    itemsList.clear()
                     var tipoPokemonString = ""
                     datos?.types?.forEach { elemento->
                         tipoPokemonString += "${traducirTipoPokemon(elemento.type.name)}\n"
                     }
-                    itemsList.add(tipoPokemonString)
-                    adapter.notifyDataSetChanged()
                     //Estadisticas
                     var estadisticas = "Estadisticas:\n"
                     datos?.stats?.forEach { elemento->
                         estadisticas += "${elemento.stat.name}: ${elemento.base_stat}\n"
                     }
-
-
-                    //jkjkjk
+                    //Lo paso a objeto para pasarlo a la segunda
                     val pokemonInfo = peso?.let {
                         if (altura != null) {
                             PokemonInfo(
@@ -170,5 +184,26 @@ class MainActivity : AppCompatActivity() {
             "Acero" -> return R.color.colorAcero
             else -> return R.color.colorNormal
         }
+    }
+
+    private fun loadPokemonData(offset: Int, limit: Int) {
+        val call = service.getPokemonList(offset, limit)
+
+        call.enqueue(object : Callback<PokemonList> {
+            override fun onResponse(call: Call<PokemonList>, response: Response<PokemonList>) {
+                if (response.isSuccessful) {
+                    val pokemonList = response.body()?.result
+                    if (pokemonList != null) {
+                        //adapter.setData(pokemonList)Falta el puto setData
+                    }
+                } else {
+                    // Maneja errores de respuesta
+                }
+            }
+
+            override fun onFailure(call: Call<PokemonList>, t: Throwable) {
+                // Maneja errores de conexión
+            }
+        })
     }
 }
