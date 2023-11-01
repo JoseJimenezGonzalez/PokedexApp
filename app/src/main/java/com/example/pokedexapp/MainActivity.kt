@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var service: APIServiceList
 
-    private lateinit var listaPokemons: MutableList<String>
+    private val listaPokemons: MutableList<String> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,44 +35,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
-        listaPokemons = mutableListOf()
-
         // Configurar el RecyclerView
-        val recyclerView = binding.recyclerView
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = AdapterRecyclerView(listaPokemons)
-        recyclerView.adapter = adapter
+        setupRecyclerView()
 
+        // Inicializar Retrofit y cargar los datos
+        initRetrofitAndLoadData()
 
+        // Configurar SearchView
+        setupSearchView()
 
-
-        //Crema
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://pokeapi.co/api/v2/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        service = retrofit.create(APIServiceList::class.java)
-
-        // Realiza la solicitud de datos
-        loadPokemonData(1, 1292)//Hay 1292 pokemon
-        //Termina Crema
-
-        binding.svNombrePokemon.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                if(query.isNullOrEmpty()){
-                    showError()
-                }else{
-                    buscarPokemonPorNombre(query)
-                }
-                return true
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                return true
-            }
-
-        })
     }
 
     private fun getRetrofit(): Retrofit {
@@ -183,26 +154,71 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPokemonData(offset: Int, limit: Int) {
+        Log.e("TAG", "loadPokemonData")
         val call = service.getPokemonList(offset, limit)
 
         call.enqueue(object : Callback<PokemonList> {
             override fun onResponse(call: Call<PokemonList>, response: Response<PokemonList>) {
                 if (response.isSuccessful) {
-                    val pokemonList = response.body()?.result
+                    Log.e("TAG", "loadPokemonDataSuccess")
+                    val pokemonList = response.body()?.results
+                    Log.e("TAG", "Respuesta de la API: $pokemonList")
 
                     pokemonList?.forEach { pokemon ->
                         // Agregar cada Pokémon a la lista de elementos
                         listaPokemons.add(pokemon.name.capitalize())
                     }
-                    // Notificar al adaptador que se han agregado nuevos elementos
-                    adapter.notifyDataSetChanged()
+
+                    Log.e("TAG", "Cantidad de Pokémon en listaPokemons: ${listaPokemons.size}")
+
+                    // Actualizar los datos del adaptador
+                    adapter.updateData(listaPokemons)
                 } else {
                     // Maneja errores de respuesta
+                    Log.e("API Error", "Error en la respuesta: ${response.code()}")
                 }
             }
 
             override fun onFailure(call: Call<PokemonList>, t: Throwable) {
                 // Maneja errores de conexión
+                Log.e("API Error", "Error en la conexión: ${t.message}")
+            }
+        })
+    }
+
+
+    private fun setupRecyclerView() {
+        val recyclerView = binding.recyclerView
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = AdapterRecyclerView(this)
+        recyclerView.adapter = adapter
+    }
+
+    private fun initRetrofitAndLoadData() {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://pokeapi.co/api/v2/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        service = retrofit.create(APIServiceList::class.java)
+
+        // Realiza la solicitud de datos
+        loadPokemonData(offset = 0, limit = 1292) // 1292 pokemons
+        Log.e("TAG", "initRetrofitAndLoadData")
+    }
+
+    private fun setupSearchView() {
+        binding.svNombrePokemon.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                if (query.isNullOrEmpty()) {
+                    showError()
+                } else {
+                    buscarPokemonPorNombre(query)
+                }
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return true
             }
         })
     }

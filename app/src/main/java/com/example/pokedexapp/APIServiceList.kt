@@ -7,4 +7,5 @@ import retrofit2.http.Query
 interface APIServiceList {
     @GET("pokemon")
     fun getPokemonList(@Query("offset") offset: Int, @Query("limit") limit: Int): Call<PokemonList>
+
 }

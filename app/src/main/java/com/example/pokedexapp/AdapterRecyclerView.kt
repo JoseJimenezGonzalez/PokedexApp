@@ -1,34 +1,39 @@
 package com.example.pokedexapp
 
-import android.util.Log
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.pokedexapp.databinding.TextRowItemBinding
 
-class AdapterRecyclerView(private val dataSet: MutableList<String>) : RecyclerView.Adapter<AdapterRecyclerView.ViewHolder>() {
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val textView: TextView
+class AdapterRecyclerView(private val context: Context) : RecyclerView.Adapter<AdapterRecyclerView.ViewHolder>() {
 
-        init {
-            textView = view.findViewById(R.id.textView)
+    private val dataSet: MutableList<String> = mutableListOf()
+
+    inner class ViewHolder(private val binding: TextRowItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(pokemonName: String) {
+            binding.textView.text = pokemonName
         }
     }
 
-    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(viewGroup.context)
-            .inflate(R.layout.text_row_item, viewGroup, false)
-        Log.d("MyAdapter", "onCreateViewHolder: View created")
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = TextRowItemBinding.inflate(LayoutInflater.from(context), parent, false)
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int {
-        return dataSet.size
-    }
+    override fun getItemCount(): Int = dataSet.size
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        viewHolder.textView.text = dataSet[position]
-        Log.d("MyAdapter", "onBindViewHolder: Data bound for position $position")
+        val pokemonName = dataSet[position]
+        viewHolder.bind(pokemonName)
+    }
+
+    fun updateData(newData: List<String>) {
+        dataSet.clear()
+        dataSet.addAll(newData)
+        notifyDataSetChanged()
     }
 }
+
