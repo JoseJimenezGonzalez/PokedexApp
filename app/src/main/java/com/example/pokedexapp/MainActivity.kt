@@ -11,9 +11,12 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import com.example.pokedexapp.databinding.ActivityMainBinding
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -26,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var service: APIServiceList
 
-    private val listaPokemons: MutableList<String> = mutableListOf()
+    private val pokemonModelList = mutableListOf<PokemonModelRec>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -157,34 +160,42 @@ class MainActivity : AppCompatActivity() {
         Log.e("TAG", "loadPokemonData")
         val call = service.getPokemonList(offset, limit)
 
-        call.enqueue(object : Callback<PokemonList> {
-            override fun onResponse(call: Call<PokemonList>, response: Response<PokemonList>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = call.execute()
                 if (response.isSuccessful) {
-                    Log.e("TAG", "loadPokemonDataSuccess")
                     val pokemonList = response.body()?.results
                     Log.e("TAG", "Respuesta de la API: $pokemonList")
 
-                    pokemonList?.forEach { pokemon ->
-                        // Agregar cada Pokémon a la lista de elementos
-                        listaPokemons.add(pokemon.name.capitalize())
+                    val deferredImages = pokemonList?.map { pokemon ->
+                        async { buscarPokNombre(pokemon.name) }
                     }
 
-                    Log.e("TAG", "Cantidad de Pokémon en listaPokemons: ${listaPokemons.size}")
+                    val images = deferredImages?.map { it.await() }
 
-                    // Actualizar los datos del adaptador
-                    adapter.updateData(listaPokemons)
+                    images?.forEachIndexed { index, imageUrl ->
+                        val pokemonModel = PokemonModelRec(pokemonList[index].name, imageUrl)
+                        if (imageUrl.isNotEmpty()) {
+                            pokemonModelList.add(pokemonModel)
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        Log.e("TAG", "Tamaño de pokemonModelList: ${pokemonModelList.size}")
+                        adapter.updateData(pokemonModelList)
+                    }
                 } else {
                     // Maneja errores de respuesta
                     Log.e("API Error", "Error en la respuesta: ${response.code()}")
                 }
-            }
-
-            override fun onFailure(call: Call<PokemonList>, t: Throwable) {
+            } catch (e: Exception) {
                 // Maneja errores de conexión
-                Log.e("API Error", "Error en la conexión: ${t.message}")
+                Log.e("API Error", "Error en la conexión: ${e.message}")
             }
-        })
+        }
     }
+
+
 
 
     private fun setupRecyclerView() {
@@ -202,7 +213,7 @@ class MainActivity : AppCompatActivity() {
         service = retrofit.create(APIServiceList::class.java)
 
         // Realiza la solicitud de datos
-        loadPokemonData(offset = 0, limit = 1292) // 1292 pokemons
+        loadPokemonData(offset = 0, limit = 15) // 1292 pokemons
         Log.e("TAG", "initRetrofitAndLoadData")
     }
 
@@ -221,6 +232,19 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         })
+    }
+
+    private suspend fun buscarPokNombre(nombre: String): String {
+        val call = getRetrofit().create(APIService::class.java).getDataByCod(nombre)
+        val datos = call.body()
+        var imageUrl = ""
+
+        if (call.isSuccessful) {
+            // Imagen
+            imageUrl = datos?.sprites?.other?.officialArtWork?.front_default ?: ""
+        }
+
+        return imageUrl
     }
 
 }
