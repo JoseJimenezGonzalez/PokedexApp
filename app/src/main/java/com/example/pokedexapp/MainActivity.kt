@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -18,8 +19,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,6 +33,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var service: APIServiceList
 
     private val pokemonModelList = mutableListOf<PokemonModelRec>()
+
+    private var isLoading = false
+    private var isLastPage = false
+    private var currentPage = 1 // Inicializa en la primera página
+    private val PAGE_SIZE = 5 // Tamaño de página, puedes ajustarlo según tus necesidades
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getRetrofit(): Retrofit {
+
         return Retrofit.Builder()
             .baseUrl("https://pokeapi.co/api/v2/pokemon/")
             .addConverterFactory(GsonConverterFactory.create())
@@ -167,7 +177,11 @@ class MainActivity : AppCompatActivity() {
                     val pokemonList = response.body()?.results
                     Log.e("TAG", "Respuesta de la API: $pokemonList")
 
+                    var cont = 1
                     val deferredImages = pokemonList?.map { pokemon ->
+                        Log.v("Pokemon", pokemon.name)
+                        Log.v("numero",cont.toString())
+                        cont++
                         async { buscarPokNombre(pokemon.name) }
                     }
 
@@ -203,21 +217,56 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = AdapterRecyclerView(this)
         recyclerView.adapter = adapter
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val visibleItemCount = layoutManager.childCount
+                val totalItemCount = layoutManager.itemCount
+                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+                if (firstVisibleItemPosition + visibleItemCount >= totalItemCount && !isLoading) {
+                    loadMoreData()
+                }
+            }
+        })
     }
 
+
     private fun initRetrofitAndLoadData() {
+        val interceptor = HttpLoggingInterceptor()
+        interceptor.level = HttpLoggingInterceptor.Level.BODY
+        val client = OkHttpClient.Builder().apply {
+            readTimeout(300, TimeUnit.SECONDS)
+            writeTimeout(300, TimeUnit.SECONDS)
+            connectTimeout(100, TimeUnit.SECONDS)
+            addInterceptor(interceptor)
+            addInterceptor { chain ->
+                var request = chain.request()
+                request = request.newBuilder()
+                    .build()
+                val response = chain.proceed(request)
+                response
+            }
+        }
+
         val retrofit = Retrofit.Builder()
             .baseUrl("https://pokeapi.co/api/v2/")
+            .client(client.build())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         service = retrofit.create(APIServiceList::class.java)
 
         // Realiza la solicitud de datos
-        loadPokemonData(offset = 0, limit = 15) // 1292 pokemons
+        loadPokemonData(offset = 0, limit = 10) // 1292 pokemons
         Log.e("TAG", "initRetrofitAndLoadData")
     }
 
     private fun setupSearchView() {
+
+
         binding.svNombrePokemon.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 if (query.isNullOrEmpty()) {
@@ -246,5 +295,16 @@ class MainActivity : AppCompatActivity() {
 
         return imageUrl
     }
+
+    private fun loadMoreData() {
+        if (!isLoading && !isLastPage) {
+            isLoading = true
+            // Actualiza el RecyclerView o carga más datos aquí
+            currentPage++ // Aumenta la página
+            loadPokemonData(offset = (currentPage - 1) * PAGE_SIZE, limit = PAGE_SIZE)
+            isLoading = false
+        }
+    }
+
 
 }
