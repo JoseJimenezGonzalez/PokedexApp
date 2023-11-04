@@ -41,5 +41,16 @@ class AdapterRecyclerView(private val context: Context) : RecyclerView.Adapter<A
         Log.d("AdapterRecyclerView", "Data set: ${dataSet.size}")
         notifyDataSetChanged()
     }
+
+    fun getPokemonNameAtPosition(position: Int): String {
+        // Asegúrate de que la posición esté dentro del rango válido
+        if (position < 0 || position >= dataSet.size) {
+            return ""
+        }
+
+        // Obtiene el nombre del Pokémon en la posición especificada
+        val pokemonModel = dataSet[position]
+        return pokemonModel.nom
+    }
 }
 

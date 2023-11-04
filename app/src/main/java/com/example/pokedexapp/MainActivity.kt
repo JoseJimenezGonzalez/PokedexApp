@@ -4,22 +4,18 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import com.example.pokedexapp.databinding.ActivityMainBinding
-import com.squareup.picasso.Picasso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -55,6 +51,19 @@ class MainActivity : AppCompatActivity() {
 
         // Configurar SearchView
         setupSearchView()
+
+        binding.recyclerView.addOnItemTouchListener(
+            RecyclerItemClickListener(this, binding.recyclerView, object : RecyclerItemClickListener.OnItemClickListener {
+                override fun onItemClick(view: View, position: Int) {
+                    // Aquí obtienes el nombre del Pokémon en la posición seleccionada
+                    val nombrePokemon = adapter.getPokemonNameAtPosition(position)
+                    Log.d("NombrePokemonPulsar", nombrePokemon) // Chivato
+                    //Lamo a cargar pokemon por nombre
+                    buscarPokemonPorNombre(nombrePokemon)
+                }
+            })
+        )
+
 
     }
 
@@ -236,20 +245,10 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun initRetrofitAndLoadData() {
-        val interceptor = HttpLoggingInterceptor()
-        interceptor.level = HttpLoggingInterceptor.Level.BODY
         val client = OkHttpClient.Builder().apply {
-            readTimeout(300, TimeUnit.SECONDS)
-            writeTimeout(300, TimeUnit.SECONDS)
+            readTimeout(600, TimeUnit.SECONDS)
+            writeTimeout(600, TimeUnit.SECONDS)
             connectTimeout(100, TimeUnit.SECONDS)
-            addInterceptor(interceptor)
-            addInterceptor { chain ->
-                var request = chain.request()
-                request = request.newBuilder()
-                    .build()
-                val response = chain.proceed(request)
-                response
-            }
         }
 
         val retrofit = Retrofit.Builder()
@@ -263,6 +262,7 @@ class MainActivity : AppCompatActivity() {
         loadPokemonData(offset = 0, limit = 10) // 1292 pokemons
         Log.e("TAG", "initRetrofitAndLoadData")
     }
+
 
     private fun setupSearchView() {
 
